@@ -1,6 +1,6 @@
 figure;
 
-[f,Fs] = audioread('Tallenne.m4a');
+[f,Fs] = audioread('lick_samplet\36_lick.wav');
 N = length(f);
 slength = N/Fs;
 tiledlayout(2,1)

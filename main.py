@@ -11,7 +11,7 @@ def load_wav_48k_mono(filename):
     wav, sample_rate = tf.audio.decode_wav(file_contents, desired_channels = 1)
     wav = tf.squeeze(wav, axis = -1)
     sample_rate = tf.cast(sample_rate, dtype = tf.int64)
-    wav = tfio.audio.resample(wav, rate_in = sample_rate, rate_ou = 48000)
+    wav = tfio.audio.resample(wav, rate_in = sample_rate, rate_out = 48000)
     return wav
 
 wave = load_wav_48k_mono(LICK_FILE)
@@ -21,3 +21,12 @@ plt.plot(wave)
 plt.plot(nwave)
 plt.show()
 
+POS = os.path.join('samplet', 'lick_samplet')
+NEG = os.path.join('samplet', 'noLick_samplet')
+
+pos = tf.data.Dataset.list_files(POS+'\*.wav')
+neg = tf.data.Dataset.list_files(NEG+'\*.wav')
+
+positives = tf.data.Dataset.zip((pos, tf.data.Dataset.from_tensor_slices(tf.ones(len(pos)))))
+negatives = tf.data.Dataset.zip((neg, tf.data.Dataset.from_tensor_slices(tf.zeros(len(neg)))))
+data = positives.concatenate(negatives)

@@ -1,7 +1,8 @@
 import os
-from matplotlib import pyplot as plt
+from random import shuffle
 import tensorflow as tf 
 import tensorflow_io as tfio
+from matplotlib import pyplot as plt
 
 LICK_FILE = os.path.join('samplet', 'lick_samplet', '1_lick.wav')
 NOT_LICK_FILE = os.path.join('samplet', 'noLick_samplet', '1_noLick.wav')
@@ -30,3 +31,30 @@ neg = tf.data.Dataset.list_files(NEG+'\*.wav')
 positives = tf.data.Dataset.zip((pos, tf.data.Dataset.from_tensor_slices(tf.ones(len(pos)))))
 negatives = tf.data.Dataset.zip((neg, tf.data.Dataset.from_tensor_slices(tf.zeros(len(neg)))))
 data = positives.concatenate(negatives)
+
+lengths = []
+for file in os.listdir(os.path.join('samplet', 'lick_samplet')):
+    tensor_wave = load_wav_48k_mono(os.path.join('samplet', 'lick_samplet', file))
+    lengths.append(len(tensor_wave))
+
+tf.math.reduce_mean(lengths)
+tf.math.reduce_min(lengths)
+tf.math.reduce_max(lengths)
+
+def preprocess(file_path, label):
+    wav = load_wav_48k_mono(file_path)
+    wav = wav[:48000]
+    zero_padding = tf.zeros([48000] - tf.shape(wav), dtype = tf.float32)
+    wav = tf.concat([zero_padding, wav], 0)
+    spectrogram = tf.signal.stft(wav, frame_length = 320, frame_step = 32)
+    spectrogram = tf.abs(spectrogram)
+    spectrogram = tf.expand_dims(spectrogram, axis = 2)
+    return spectrogram, label
+
+filepath, label = positives.shuffle(buffer_size = 10000).as_numpy_iterator().next()
+
+spectrogram, label = preprocess(filepath, label)
+
+plt.figure(figsize = (30, 20))
+plt.imshow(tf.transpose(spectrogram)[0])
+plt.show()
